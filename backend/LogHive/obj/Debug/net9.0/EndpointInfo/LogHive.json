@@ -1,0 +1,528 @@
+{
+  "openapi": "3.0.4",
+  "info": {
+    "title": "LogHive",
+    "version": "1.0"
+  },
+  "paths": {
+    "/api/analytics/summary": {
+      "get": {
+        "tags": [
+          "Analytics"
+        ],
+        "summary": "Общая статистика за период.",
+        "description": "Возвращает общее кол-во ошибок, кол-во групп ошибок: решенные, актульные, всего.\r\n            \r\nПоддерживаемые периоды:\r\n- 1h — последний час;\r\n- 24h — последние сутки;\r\n- 7d — последняя неделя.\r\n            \r\nДоступна фильтрация по уровню ошибки и статусу решения.",
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "description": "Период: 1h, 24h или 7d.",
+            "schema": {
+              "type": "string",
+              "default": "24h"
+            }
+          },
+          {
+            "name": "level",
+            "in": "query",
+            "description": "Уровень: ERROR, WARN или INFO.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "resolved",
+            "in": "query",
+            "description": "Статус решения: true или false.",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Статистика успешно получена."
+          },
+          "400": {
+            "description": "Переданы некорректные параметры."
+          }
+        }
+      }
+    },
+    "/api/analytics/timeline": {
+      "get": {
+        "tags": [
+          "Analytics"
+        ],
+        "summary": "Данные для графика за выбранный период.",
+        "description": "Возвращает общее кол-во логов за шаг времни в выбранном врменном интревале.\r\nЧас - каждые 10 мин. Сутки - каждый час. Неделя - каждый день.\r\n            \r\nПоддерживаемые периоды:\r\n- 1h — последний час;\r\n- 24h — последние сутки;\r\n- 7d — последняя неделя.\r\n            \r\nДоступна фильтрация по уровню ошибки и статусу решения.",
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "description": "Период: 1h, 24h или 7d.",
+            "schema": {
+              "type": "string",
+              "default": "24h"
+            }
+          },
+          {
+            "name": "level",
+            "in": "query",
+            "description": "Уровень: ERROR, WARN или INFO.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "resolved",
+            "in": "query",
+            "description": "Статус решения: true или false.",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Статистика успешно получена."
+          },
+          "400": {
+            "description": "Переданы некорректные параметры."
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/issues": {
+      "get": {
+        "tags": [
+          "Issues"
+        ],
+        "summary": "Получает список групп ошибок за выбранный период.",
+        "description": "Возвращаются только группы ошибок, у которых было хотя бы одно\r\nсобытие в таблице events за указанный период.\r\n            \r\nПоддерживаемые периоды:\r\n- 1h — последний час;\r\n- 24h — последние 24 часа;\r\n- 7d — последние 7 дней.\r\n            \r\nДоступна фильтрация по уровню ошибки, статусу решения\r\nи текстовому поиску по названию или fingerprint.\r\n            \r\nРезультаты сортируются по времени последнего события\r\nза выбранный период в порядке убывания.\r\nПоддерживается постраничная загрузка.\r\n            \r\nПример запроса:\r\nGET /api/issues?period=24h&level=ERROR&resolved=false",
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "description": "Период выборки: 1h, 24h или 7d. По умолчанию 24h.",
+            "schema": {
+              "type": "string",
+              "default": "24h"
+            }
+          },
+          {
+            "name": "level",
+            "in": "query",
+            "description": "Уровень ошибки: ERROR, WARN или INFO.\r\nЕсли не указан, возвращаются все уровни.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "resolved",
+            "in": "query",
+            "description": "Статус решения: true — решённые, false — нерешённые.\r\nЕсли не указан, возвращаются все группы.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Поиск по названию ошибки или fingerprint.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Максимальное количество записей в ответе (от 1 до 100).\r\nПо умолчанию 20.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Смещение для постраничной загрузки. По умолчанию 0.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Список групп ошибок успешно получен."
+          },
+          "400": {
+            "description": "Передан недопустимый период или уровень ошибки.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/issues/{id}": {
+      "get": {
+        "tags": [
+          "Issues"
+        ],
+        "summary": "Получает подробную информацию об одной группе ошибок.",
+        "description": "Возвращает основную информацию о группе, stack trace,\r\nобщее количество событий и количество событий за выбранный период.\r\n            \r\nГруппа возвращается только в том случае, если за указанный\r\nпериод у неё было хотя бы одно событие.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Идентификатор группы ошибок.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "description": "Период выборки: 1h, 24h или 7d. По умолчанию 24h.",
+            "schema": {
+              "type": "string",
+              "default": "24h"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Информация о группе успешно получена."
+          },
+          "400": {
+            "description": "Передан недопустимый период.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Группа не найдена или за выбранный период не было событий.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/issues/{id}/events": {
+      "get": {
+        "tags": [
+          "Issues"
+        ],
+        "summary": "Получает список событий, принадлежащих одной группе ошибок.",
+        "description": "События выбираются из таблицы events по идентификатору группы.\r\nВозвращаются только события, созданные за указанный период.\r\nРезультаты сортируются от новых к старым.\r\n            \r\nПоддерживается постраничная загрузка.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Идентификатор группы ошибок.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "description": "Период выборки: 1h, 24h или 7d. По умолчанию 24h.",
+            "schema": {
+              "type": "string",
+              "default": "24h"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Максимальное количество событий (от 1 до 100).\r\nПо умолчанию 20.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Смещение для постраничной загрузки. По умолчанию 0.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "События успешно получены."
+          },
+          "400": {
+            "description": "Передан недопустимый период.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Группа не найдена или за выбранный период нет событий.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/issues/{id}/resolve": {
+      "patch": {
+        "tags": [
+          "Issues"
+        ],
+        "summary": "Отмечает группу ошибок как решённую.",
+        "description": "Устанавливает значение resolved = true для группы\r\nс указанным идентификатором.\r\n            \r\nОперация не удаляет группу и связанные с ней события.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Идентификатор группы ошибок.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Статус группы успешно изменён."
+          },
+          "404": {
+            "description": "Группа ошибок с указанным ID не найдена.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/db-test": {
+      "get": {
+        "tags": [
+          "LogHive"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/logs": {
+      "post": {
+        "tags": [
+          "Logs"
+        ],
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LogEventRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LogEventRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/LogEventRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "LogEventRequest": {
+        "required": [
+          "level",
+          "msg",
+          "timestamp"
+        ],
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "level": {
+            "maxLength": 10,
+            "minLength": 1,
+            "type": "string"
+          },
+          "msg": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "caller": {
+            "maxLength": 500,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": { }
+      },
+      "LoginRequest": {
+        "required": [
+          "password",
+          "username"
+        ],
+        "type": "object",
+        "properties": {
+          "username": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "password": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "detail": {
+            "type": "string",
+            "nullable": true
+          },
+          "instance": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": { }
+      }
+    },
+    "securitySchemes": {
+      "Bearer": {
+        "type": "http",
+        "description": "Введите JWT-токен",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "security": [
+    {
+      "Bearer": [ ]
+    }
+  ]
+}
