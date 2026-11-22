@@ -1,0 +1,206 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>LogHive</name>
+    </assembly>
+    <members>
+        <member name="M:LogHive.Controllers.AnalyticsController.GetSummary(System.String,System.String,System.Nullable{System.Boolean})">
+             <summary>
+             Общая статистика за период.
+             </summary>
+             <remarks>
+             Возвращает общее кол-во ошибок, кол-во групп ошибок: решенные, актульные, всего.
+            
+             Поддерживаемые периоды:
+             - 1h — последний час;
+             - 24h — последние сутки;
+             - 7d — последняя неделя.
+            
+             Доступна фильтрация по уровню ошибки и статусу решения.
+             </remarks>
+             <param name="period">Период: 1h, 24h или 7d.</param>
+             <param name="level">Уровень: ERROR, WARN или INFO.</param>
+             <param name="resolved">Статус решения: true или false.</param>
+             <response code="200">Статистика успешно получена.</response>
+             <response code="400">Переданы некорректные параметры.</response>
+        </member>
+        <member name="M:LogHive.Controllers.AnalyticsController.GetTimeline(System.String,System.String,System.Nullable{System.Boolean})">
+             <summary>
+             Данные для графика за выбранный период.
+             </summary>
+             <remarks>
+             Возвращает общее кол-во логов за шаг времни в выбранном врменном интревале.
+             Час - каждые 10 мин. Сутки - каждый час. Неделя - каждый день.
+            
+             Поддерживаемые периоды:
+             - 1h — последний час;
+             - 24h — последние сутки;
+             - 7d — последняя неделя.
+            
+             Доступна фильтрация по уровню ошибки и статусу решения.
+             </remarks>
+             <param name="period">Период: 1h, 24h или 7d.</param>
+             <param name="level">Уровень: ERROR, WARN или INFO.</param>
+             <param name="resolved">Статус решения: true или false.</param>
+             <response code="200">Статистика успешно получена.</response>
+             <response code="400">Переданы некорректные параметры.</response>
+        </member>
+        <member name="T:LogHive.Controllers.IssuesController">
+            <summary>
+            Контроллер для работы с группами ошибок (Issues).
+            </summary>
+            <remarks>
+            Позволяет получать список групп ошибок, просматривать информацию
+            об отдельной группе, получать связанные с ней события
+            и изменять статус решения ошибки.
+            Все GET-запросы поддерживают выбор временного периода.
+            </remarks>
+        </member>
+        <member name="M:LogHive.Controllers.IssuesController.#ctor(Npgsql.NpgsqlDataSource)">
+            <summary>
+            Создаёт экземпляр контроллера.
+            </summary>
+            <param name="dataSource">
+            Источник подключений к базе данных PostgreSQL.
+            </param>
+        </member>
+        <member name="M:LogHive.Controllers.IssuesController.TryGetPeriod(System.String,System.TimeSpan@)">
+            <summary>
+            Преобразует значение периода в продолжительность.
+            </summary>
+            <param name="period">
+            Обозначение периода: 1h, 24h или 7d.
+            </param>
+            <param name="duration">
+            Продолжительность выбранного периода.
+            </param>
+            <returns>
+            true, если период допустим; иначе false.
+            </returns>
+        </member>
+        <member name="M:LogHive.Controllers.IssuesController.AddFilterParameters(Npgsql.NpgsqlCommand,System.DateTime,System.String,System.Nullable{System.Boolean},System.String)">
+            <summary>
+            Добавляет параметры фильтрации в SQL-запрос.
+            </summary>
+            <param name="command">SQL-команда.</param>
+            <param name="since">Начало временного периода.</param>
+            <param name="level">Уровень ошибки.</param>
+            <param name="resolved">Статус решения ошибки.</param>
+            <param name="search">Строка поиска.</param>
+        </member>
+        <member name="M:LogHive.Controllers.IssuesController.GetIssues(System.String,System.String,System.Nullable{System.Boolean},System.String,System.Int32,System.Int32)">
+             <summary>
+             Получает список групп ошибок за выбранный период.
+             </summary>
+             <remarks>
+             Возвращаются только группы ошибок, у которых было хотя бы одно
+             событие в таблице events за указанный период.
+            
+             Поддерживаемые периоды:
+             - 1h — последний час;
+             - 24h — последние 24 часа;
+             - 7d — последние 7 дней.
+            
+             Доступна фильтрация по уровню ошибки, статусу решения
+             и текстовому поиску по названию или fingerprint.
+            
+             Результаты сортируются по времени последнего события
+             за выбранный период в порядке убывания.
+             Поддерживается постраничная загрузка.
+            
+             Пример запроса:
+             GET /api/issues?period=24h&amp;level=ERROR&amp;resolved=false
+             </remarks>
+             <param name="period">
+             Период выборки: 1h, 24h или 7d. По умолчанию 24h.
+             </param>
+             <param name="level">
+             Уровень ошибки: ERROR, WARN или INFO.
+             Если не указан, возвращаются все уровни.
+             </param>
+             <param name="resolved">
+             Статус решения: true — решённые, false — нерешённые.
+             Если не указан, возвращаются все группы.
+             </param>
+             <param name="search">
+             Поиск по названию ошибки или fingerprint.
+             </param>
+             <param name="limit">
+             Максимальное количество записей в ответе (от 1 до 100).
+             По умолчанию 20.
+             </param>
+             <param name="offset">
+             Смещение для постраничной загрузки. По умолчанию 0.
+             </param>
+             <response code="200">
+             Список групп ошибок успешно получен.
+             </response>
+             <response code="400">
+             Передан недопустимый период или уровень ошибки.
+             </response>
+        </member>
+        <member name="M:LogHive.Controllers.IssuesController.GetIssueById(System.Int32,System.String)">
+             <summary>
+             Получает подробную информацию об одной группе ошибок.
+             </summary>
+             <remarks>
+             Возвращает основную информацию о группе, stack trace,
+             общее количество событий и количество событий за выбранный период.
+            
+             Группа возвращается только в том случае, если за указанный
+             период у неё было хотя бы одно событие.
+             </remarks>
+             <param name="id">Идентификатор группы ошибок.</param>
+             <param name="period">
+             Период выборки: 1h, 24h или 7d. По умолчанию 24h.
+             </param>
+             <response code="200">Информация о группе успешно получена.</response>
+             <response code="400">Передан недопустимый период.</response>
+             <response code="404">
+             Группа не найдена или за выбранный период не было событий.
+             </response>
+        </member>
+        <member name="M:LogHive.Controllers.IssuesController.GetIssueEvents(System.Int32,System.String,System.Int32,System.Int32)">
+             <summary>
+             Получает список событий, принадлежащих одной группе ошибок.
+             </summary>
+             <remarks>
+             События выбираются из таблицы events по идентификатору группы.
+             Возвращаются только события, созданные за указанный период.
+             Результаты сортируются от новых к старым.
+            
+             Поддерживается постраничная загрузка.
+             </remarks>
+             <param name="id">Идентификатор группы ошибок.</param>
+             <param name="period">
+             Период выборки: 1h, 24h или 7d. По умолчанию 24h.
+             </param>
+             <param name="limit">
+             Максимальное количество событий (от 1 до 100).
+             По умолчанию 20.
+             </param>
+             <param name="offset">
+             Смещение для постраничной загрузки. По умолчанию 0.
+             </param>
+             <response code="200">События успешно получены.</response>
+             <response code="400">Передан недопустимый период.</response>
+             <response code="404">
+             Группа не найдена или за выбранный период нет событий.
+             </response>
+        </member>
+        <member name="M:LogHive.Controllers.IssuesController.ResolveIssue(System.Int32)">
+             <summary>
+             Отмечает группу ошибок как решённую.
+             </summary>
+             <remarks>
+             Устанавливает значение resolved = true для группы
+             с указанным идентификатором.
+            
+             Операция не удаляет группу и связанные с ней события.
+             </remarks>
+             <param name="id">Идентификатор группы ошибок.</param>
+             <response code="200">Статус группы успешно изменён.</response>
+             <response code="404">Группа ошибок с указанным ID не найдена.</response>
+        </member>
+    </members>
+</doc>
